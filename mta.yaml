@@ -1,0 +1,89 @@
+_schema-version: "3.2"
+ID: SDMReuseUI
+version: 0.0.1
+modules:
+- name: sdmreuseui-approuter
+  type: approuter.nodejs
+  path: sdmreuseui-approuter
+  requires:
+  - name: SDMReuseUI_html_repo_runtime
+  - name: uaa_SDMReuseUI
+  - name: SDMReuseUI-destination-service
+    group: destinations
+    properties:
+      forwardAuthToken: false
+      name: ui5
+      url: https://ui5.sap.com
+  - name: docuservice
+    properties:
+      destinations: "[{\"name\": \"sdibackend\", \"url\": \"https://api-sdm-di.cfapps.sap.hana.ondemand.com\", \"forwardAuthToken\": true}]"
+  parameters:
+    disk-quota: 256M
+    memory: 256M
+- name: SDMReuseUI_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: SDMReuseUI_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - nsui5.zip
+      name: nsui5
+      target-path: resources/
+- name: nsui5
+  type: html5
+  path: ui5
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: SDMReuseUI_html_repo_runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: docuservice
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: sdm
+    service-plan: free
+- name: uaa_SDMReuseUI
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: SDMReuseUI-xsuaa-service
+    service-plan: application
+- name: SDMReuseUI_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+- name: SDMReuseUI-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: false
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: SDMReuseUI-destination-service
+    service-plan: lite
+parameters:
+  deploy_mode: html5-repo

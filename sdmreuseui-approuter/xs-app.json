@@ -1,0 +1,5 @@
+{
+  "authenticationMethod": "route",
+  "routes": [],
+  "welcomeFile": "/nsui5/index.html"
+}
